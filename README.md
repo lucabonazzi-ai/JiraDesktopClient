@@ -1,3 +1,32 @@
+## About this fork
+
+**Maintainer:** Luca Bonazzi <luca.bonazzi@gmail.com>
+
+**Purpose.** Bring the client up to date with the current Jira Cloud REST API (v3),
+including the migration from the deprecated `/rest/api/*/search` endpoint to
+`/rest/api/3/search/jql` (Atlassian CHANGE-2046, which replaces `startAt`/`total`
+offset paging with `nextPageToken` cursor paging and drops the total result count).
+
+**Method.** Conversion and code changes are carried out with
+[Claude Code](https://claude.com/claude-code) (Anthropic) under human supervision:
+every change is reviewed, built and tested before being committed.
+
+**Status.** Work in progress. The baseline is Client for Jira 3.9.0, released as
+open source by ALM Works; see the original README below for the upstream project.
+
+**Build note.** `ant/build.sh` is no longer tracked, because it holds machine-local
+paths. Copy [ant/build.sh.example](ant/build.sh.example) to `ant/build.sh` and fill in
+`ANT_HOME` and `JDK8_HOME`. Where the original README below refers to `ant/build.sh`,
+read `ant/build.sh.example`. A log of the fork's changes, along with the build and
+runtime gotchas found so far, is in [docs/CHANGES-FORK.md](docs/CHANGES-FORK.md).
+
+This fork keeps the original attribution to ALM Works, Inc. (and to Tempo, which
+acquired ALM Works) and remains licensed under the GPL v3, as the upstream project.
+
+---
+
+## Original README
+
 This branch contains the version compatible **only with Jira Cloud**.
 If you need to build the application compatible with Jira Server or Data Center, please switch to the [server](https://bitbucket.org/almworks/jiraclient/branch/server) branch.
 See the Branches section below for details.
