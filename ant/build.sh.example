@@ -1,0 +1,34 @@
+#! /bin/sh
+#
+# Sample build script. Copy to build.sh and fill in the two variables below.
+#
+#   cp build.sh.example build.sh
+#
+# build.sh is kept out of version control (see .git/info/exclude) because it
+# holds machine-local paths.
+#
+# Requirements:
+#   * Oracle JDK 8, update 112 to 202. Must be a JDK (javac), not a JRE.
+#     8u202 is the last update that still ships JavaFX (jre/lib/ext/jfxrt.jar),
+#     which the application launcher requires at runtime.
+#   * Apache Ant (binary distribution is enough: bin/ and lib/ are used).
+#
+# Run this script from the ant/ directory.
+
+# Installation directory of Apache ANT (the dir which containts "bin", "lib" sub directories)
+ANT_HOME=
+# Home directory of Java8 JDK (the dir which contains "bin", "lib", "jre" subdirectories)
+JDK8_HOME=
+
+# On Windows, quote both values and use Windows-style paths with forward
+# slashes, e.g. ANT_HOME="C:/ant/apache-ant-1.10.17" and
+# JDK8_HOME="C:/Program Files/Java/jdk1.8.0_202". A POSIX path such as
+# /c/Program Files/... works for the shell but is passed on to a Windows JVM
+# via -Djdk, where it cannot be resolved.
+
+# -Dfile.encoding=UTF-8 is required: the "gjc" task defined in transform.xsl
+# never sets an encoding, so javac falls back to the platform default. Sources
+# are UTF-8 and some contain non-Latin characters, which makes the build fail
+# with "unmappable character for encoding Cp1252" on a non-UTF-8 locale.
+
+"$JDK8_HOME/bin/java" -Dfile.encoding=UTF-8 -cp "$ANT_HOME/lib/ant-launcher.jar" org.apache.tools.ant.launch.Launcher -f ./build.xml prepareDistribution -Djdk="$JDK8_HOME" -Dbuild.number=9876

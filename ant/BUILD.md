@@ -27,7 +27,7 @@ Run the script from the [ant](.) directory
     
 ### Files
  * [build.xml](build.xml) main build script
- * [build.sh](build.sh) sample shell script which launches a build process and provides it all parameters
+ * [build.sh.example](build.sh.example) sample shell script which launches a build process and provides it all parameters. Copy it to `build.sh` (untracked) and fill in `ANT_HOME` / `JDK8_HOME`
  * [genHeader.xml](genHeader.xml), [properties.xml](properties.xml), [runGenerated.xml](runGenerated.xml) supplementary build files
  * [meta.xml](meta.xml) describes source modules, external libraries, source dependencies and distribution layout
  * [transform.xsl](transform.xsl) used to transform the [meta.xml](meta.xml) file to Ant build script
