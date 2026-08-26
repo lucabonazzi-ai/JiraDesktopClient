@@ -10,10 +10,10 @@ import com.almworks.restconnector.RestResponse;
 import com.almworks.restconnector.RestSession;
 import com.almworks.restconnector.jql.JqlQuery;
 import com.almworks.restconnector.json.ArrayKey;
-import com.almworks.restconnector.json.JSONKey;
 import com.almworks.util.Env;
 import com.almworks.util.LogHelper;
 import org.almworks.util.Collections15;
+import org.jetbrains.annotations.Nullable;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.ParseException;
@@ -24,20 +24,37 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Issue search against {@code /rest/api/2/search/jql}.
+ * <p/>
+ * This endpoint replaced {@code /rest/api/2/search}, which now answers 410 Gone
+ * (Atlassian CHANGE-2046). Two things changed for callers: paging is a cursor,
+ * {@code nextPageToken}, instead of the {@code startAt} offset, and the response no
+ * longer carries a {@code total} count, so the number of matching issues is not
+ * known in advance and cannot be known until the last page has been read.
+ * <p/>
+ * Deliberately the <b>v2</b> flavour of the endpoint. Atlassian published enhanced
+ * search under both versions, and v3 is the ADF-aware counterpart of v2 rather than
+ * its successor: it returns rich text fields as Atlassian Document Format objects,
+ * {@code {"type":"doc","version":1,...}}, where v2 returns plain text. This client
+ * parses plain text throughout, and every other call it makes is on {@code api/2},
+ * so searching on v3 would hand ADF objects to parsers expecting strings. They log
+ * and return null, silently blanking description and other rich text fields.
+ *
+ * @see com.almworks.jira.provider3.sync.download2.details.RestQueryPager
+ */
 public class JqlSearch {
-  public static final JSONKey<Integer> TOTAL = JSONKey.integer("total");
   public static final ArrayKey<JSONObject> ISSUES = ArrayKey.objectArray("issues");
-  public static final JSONKey<Integer> MAX_RESULTS = JSONKey.integer("maxResults");
 
   private static final String JQL_MAX_RESULT = "jiraclient.jql.maxresult";
 
-  private static final String PATH = "api/2/search";
+  private static final String PATH = "api/2/search/jql";
 
   private final JqlQuery myJql;
-  private int myStart = 0;
+  /** Cursor for the page to request. Null asks for the first page. */
+  private String myNextPageToken = null;
   private int myMaxResult = -1;
   private final List<String> myFields = Collections15.arrayList();
-  private final List<String> myExpand = Collections15.arrayList();
 
   public JqlSearch(JqlQuery jql) {
     myJql = jql;
@@ -48,34 +65,32 @@ public class JqlSearch {
   }
 
   public void reset() {
-    myStart = 0;
+    myNextPageToken = null;
     myMaxResult = -1;
     myFields.clear();
-    myExpand.clear();
   }
 
   @SuppressWarnings("unchecked")
   public JSONObject createRequest() {
     JSONObject request = new JSONObject();
     request.put("jql", myJql.getJqlText());
-    request.put("startAt", myStart);
     if (myMaxResult > 0) request.put("maxResults", myMaxResult);
     else LogHelper.error("Missing maxResult");
+    if (myNextPageToken != null) request.put("nextPageToken", myNextPageToken);
     if (!myFields.isEmpty()) {
       JSONArray fieldsArray = new JSONArray();
       fieldsArray.addAll(myFields);
       request.put("fields", fieldsArray);
     }
-    if (!myExpand.isEmpty()) {
-      JSONArray expand = new JSONArray();
-      expand.addAll(myExpand);
-      request.put("expand", expand);
-    }
     return request;
   }
 
-  public void setStart(int start) {
-    myStart = start;
+  /**
+   * @param nextPageToken cursor returned by the previous page, null to ask for the
+   * first page
+   */
+  public void setNextPageToken(@Nullable String nextPageToken) {
+    myNextPageToken = nextPageToken;
   }
 
   public JqlSearch setMaxResult(int maxResult) {
@@ -94,17 +109,13 @@ public class JqlSearch {
     return this;
   }
 
-  public void addExpand(String ... expand) {
-    myExpand.addAll(Arrays.asList(expand));
-  }
-
   public JqlQuery getJql() {
     return myJql;
   }
 
   @Override
   public String toString() {
-    return "JQLsearch(" + myJql + " from:" + myStart + " max:" + myMaxResult + " fields:" + myFields + " expand:" + myExpand + ")";
+    return "JQLsearch(" + myJql + " token:" + myNextPageToken + " max:" + myMaxResult + " fields:" + myFields + ")";
   }
 
   public RestResponse request(RestSession session) throws ConnectorException {

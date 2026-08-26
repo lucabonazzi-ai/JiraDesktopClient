@@ -22,7 +22,7 @@ import org.json.simple.JSONObject;
 
 public class RestIssueProcessor implements Procedure<JSONObject> {
   private static final LocalizedAccessor.Value PROGRESS_LOAD_FIRST = ConnectorManager.LOCAL.getFactory("loadQuery.progress.load.first");
-  public static final LocalizedAccessor.Message2 PROGRESS_LOAD_NEXT = ConnectorManager.LOCAL.message2("loadQuery.progress.load.next");
+  public static final LocalizedAccessor.MessageStr PROGRESS_LOAD_NEXT = ConnectorManager.LOCAL.messageStr("loadQuery.progress.load.next");
 
   private static final int MAX_ISSUES = 100;
 
