@@ -17,7 +17,9 @@ for scope and method.
 | Runtime | Oracle JDK 8 **with JavaFX** documented as a hard requirement | done |
 | Dev tooling | `bin/jiraclient-local.bat` launcher wrapper | done (build output, not tracked) |
 | UI | "Copy Messages" button in the connection wizard | done |
-| API | `/rest/api/*/search` to `/rest/api/3/search/jql` (CHANGE-2046) | planned |
+| API | `/rest/api/2/search` to `/rest/api/2/search/jql` (CHANGE-2046) | done, verified against a live Cloud instance |
+| Sync | "Upload conflict" when setting a field a previous upload had already changed | fixed, as a consequence of the migration landing on v2 |
+| API | Unbounded JQL in `LoadCommentVisibility` rejected by the enhanced endpoint | open, not fixed |
 | Tests | `ReferredByQueryTests` fails in the full run, passes in isolation | open, not fixed |
 
 ---
@@ -229,13 +231,134 @@ To run it in isolation, reusing the already compiled classes:
 
 ---
 
-## Planned work
+## Search endpoint migration (CHANGE-2046)
 
-### Search endpoint migration (CHANGE-2046)
+Atlassian retired `/rest/api/*/search` in favour of the enhanced search endpoint.
+On Cloud the old path already answers **410 Gone**, so this was not a deprecation
+to plan for but a client that could no longer synchronise at all. The replacement
+is not a drop-in: `startAt` offset paging becomes a `nextPageToken` cursor, and
+there is no total result count any more.
 
-Atlassian is retiring `/rest/api/*/search` in favour of `/rest/api/3/search/jql`.
-The new endpoint changes pagination in a way that is not a drop-in replacement:
+Implemented. What changed:
 
-* `startAt` / `total` offset paging is replaced by a `nextPageToken` cursor
-* there is no total result count any more, so progress indicators and any logic
-  that pre-computes a page count have to be reworked
+| File | Change |
+|---|---|
+| `JqlSearch` | Posts to `api/2/search/jql`, sends `nextPageToken` instead of `startAt`. `addExpand()` removed as dead code; the `TOTAL` and `MAX_RESULTS` response keys removed, since neither is returned any more. |
+| `RestQueryPager` | Keeps the cursor and pages until the server stops offering one. `getTotal()` and `setStart()` replaced by `getLoadedCount()` and `isLastPageLoaded()`. |
+| `RestIssueProcessor` | Progress message takes one argument instead of two. |
+| `message.properties` | `loadQuery.progress.load.next` is now `Loading: {0} issues`, with no percentage. |
+
+Three decisions worth knowing about:
+
+* **End of query is decided by the absence of `nextPageToken`, not by `isLast`.**
+  The endpoint documentation notes that `isLast` is not returned by every
+  operation, so the cursor is the signal that can be relied on. `isLast` is
+  still honoured when it is present.
+* **`loadNext()` returns the number of issues actually read**, counted as they
+  stream through the SAX handler. Callers must no longer derive a position from
+  the return value; the cursor lives in the pager.
+* **An explicit `maxResult` still caps the load to a single page.**
+  `RestDownloadUpdatedIssues.firstSync()` relies on that to fetch only the most
+  recently updated issue.
+
+Losing the total count turned out to be contained, because `getTotal()` had no
+callers outside the pager. It only fed loop termination and the progress
+readout.
+
+### Why v2 and not v3
+
+The first attempt pointed at `api/3/search/jql`, on the assumption that the newer
+version was simply the current one. It is not. **v3 is the ADF-aware counterpart
+of v2, not its successor**: it returns rich text fields as Atlassian Document
+Format objects, `{"type":"doc","version":1,"content":[...]}`, where v2 returns
+plain text. Every other call this client makes is on `api/2`, and its field
+parsers expect strings throughout, so searching on v3 fed ADF objects to
+`JSONKey.CastConvertor`, which **logs and returns null** rather than throwing:
+
+```
+SEVERE Expected class java.lang.String
+  {"type":"doc","version":1,"content":[{"type":"paragraph","content":[{"text":"test2","type":"text"}]}]}
+	at JSONKey$CastConvertor.convert(JSONKey.java:369)
+	at ScalarField.loadValue(ScalarField.java:37)
+	at JiraIssueJsonFields.loadIssue(JiraIssueJsonFields.java:65)
+	at RestIssueProcessor.invoke(RestIssueProcessor.java:56)
+```
+
+Issues therefore downloaded successfully but with description and other rich text
+fields silently blanked, and `types.priority` failing to resolve. Atlassian
+publishes enhanced search under both versions, so `api/2/search/jql` gives the
+cursor paging that CHANGE-2046 requires while leaving the field representation,
+and the rest of the client, untouched.
+
+The lesson worth keeping: this migration crossed an **API version** boundary when
+only an **endpoint** boundary needed crossing.
+
+### The "Upload conflict" bug this caused
+
+Setting a field on an issue produced *"This issue has conflicting changes on the
+server"*, with the merge dialog showing the previously edited field on the Remote
+side and the newly edited one only on Local.
+
+The conflict check in `EditIssue.onInitialStateLoaded()` compares, per field, the
+local base against the freshly downloaded server value; it does not look at
+`updated` or at any version number. The base only advances when
+`MyValue.doFinishUpload()` finds the re-downloaded value equal to what was
+uploaded, and one divergent field aborts the whole edit, because `loadValues()`
+loads every descriptor rather than only the changed ones.
+
+With search running on v3, rich text fields came back as null. The base for those
+fields could therefore never match the server, never advanced, and every
+subsequent edit of *any* field was rejected as a conflict on the previously
+uploaded one. Landing the migration on v2 removes the cause; no change to the
+conflict machinery was needed.
+
+### Still open
+
+* **The empty JQL** in `LoadCommentVisibility`, which calls
+  `new JqlSearch(JqlQuery.EMPTY).addFields("key").querySingle(session)`. The
+  enhanced endpoint requires bounded queries and rejects it:
+  *"Le query JQL senza vincoli non sono consentite qui."* Comment visibility
+  groups are not loaded. Unaffected by the v2/v3 choice.
+
+`fields: ["*all"]` is **not** a problem on `api/2/search/jql`: the live instance
+returns the full field set.
+
+---
+
+## Known risks and roadmap
+
+### v2 is on borrowed time
+
+Landing enhanced search on `api/2/search/jql` is a **tactical** choice, not a
+final one. It buys back a working client without touching field representation,
+but Atlassian has stated the intent to sunset REST API v2 as a whole. No firm
+date has been published.
+
+This is the one external dependency worth watching actively. The canonical source
+is the developer changelog, <https://developer.atlassian.com/changelog/>, which
+publishes an RSS feed; subscribing to it is cheaper than rediscovering a 410 the
+way this fork discovered the `/search` removal.
+
+### Roadmap: full v3 migration
+
+Moving the whole client to v3 is not a find-and-replace over the **44** remaining
+`api/2/` call sites. v3 is the ADF-aware counterpart of v2, so the prerequisite
+is ADF support:
+
+* **Reading**: an ADF to plain text converter, applied where the field parsers
+  currently expect a string. `JSONKey.CastConvertor` is where the mismatch
+  surfaces today, silently returning null.
+* **Writing**: decide between requesting *rendered fields* and sending ADF for
+  the fields the client edits, chiefly `description` and comment bodies. Sending
+  plain text to a v3 write endpoint has the mirror-image problem of reading ADF
+  with a string parser.
+
+Until that exists, the 44 `api/2/` calls cannot be closed, and any partial move
+to v3 risks reintroducing exactly the silent-blanking defect described above.
+
+### Out of scope for now
+
+The other 43 occurrences of the `api/2/` prefix are untouched. The path is
+assembled centrally in `RestSession` (`myBaseUrl + "rest/" + path`), but the API
+version is hardcoded in every literal, so a general v2 to v3 migration is a
+separate piece of work.
