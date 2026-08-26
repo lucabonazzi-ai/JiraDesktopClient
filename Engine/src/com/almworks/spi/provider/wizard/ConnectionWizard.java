@@ -30,8 +30,13 @@ import com.almworks.util.text.NameMnemonic;
 import com.almworks.util.threads.Threads;
 import com.almworks.util.ui.GlobalColors;
 import com.almworks.util.ui.UIUtil;
+import com.almworks.util.ui.actions.ActionContext;
 import com.almworks.util.ui.actions.AnAbstractAction;
+import com.almworks.util.ui.actions.AnAction;
+import com.almworks.util.ui.actions.CantPerformException;
 import com.almworks.util.ui.actions.IdActionProxy;
+import com.almworks.util.ui.actions.SimpleAction;
+import com.almworks.util.ui.actions.UpdateContext;
 import com.almworks.util.ui.swing.DocumentUtil;
 import org.almworks.util.Collections15;
 import org.almworks.util.StringUtil;
@@ -832,10 +837,49 @@ public abstract class ConnectionWizard extends Wizard {
       }
     };
 
+    private final AnAction myCopyMessagesAction;
+
     public InitPage() {
       super(INIT_PAGE_ID, NAME_PAGE_ID, CLOSE_ID);
       createPanel("Initializing connection");
-      myMoreAction = myTracker.getRetryAction();
+      // createPanel() calls createContent(), so myInfoPlace exists from here on.
+      myCopyMessagesAction = createCopyMessagesAction();
+    }
+
+    /**
+     * Creates the action that puts the whole content of the message area on the
+     * clipboard: every message, including the ones scrolled out of view, and the
+     * long explanations behind the "question mark" links. The point is to make a
+     * failed initialization straightforward to paste into a bug report.
+     * <p/>
+     * Must be called after {@link #createPanel}, because it subscribes to the
+     * message area created there.
+     */
+    private AnAction createCopyMessagesAction() {
+      return new SimpleAction("Copy Messages") {
+        {
+          updateOnChange(myInfoPlace.getModifiable());
+        }
+
+        @Override
+        protected void customUpdate(UpdateContext context) throws CantPerformException {
+          context.setEnabled(myInfoPlace.hasMessages());
+        }
+
+        @Override
+        protected void doPerform(ActionContext context) throws CantPerformException {
+          UIUtil.copyToClipboard(myInfoPlace.getAllMessagesText());
+        }
+      };
+    }
+
+    /**
+     * Overridden because {@link BasePage} exposes a single action and this page
+     * needs two: "Retry Initialization" and "Copy Messages".
+     */
+    @Override
+    public AnAction[] getMoreActions() {
+      return new AnAction[] { myTracker.getRetryAction(), myCopyMessagesAction };
     }
 
     @Override
