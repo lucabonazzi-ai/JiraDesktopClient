@@ -30,7 +30,7 @@ Examples:
 
 ```
 feat(wizard): add copy-messages button to connection wizard
-fix(sync): migrate issue search to /rest/api/3/search/jql (CHANGE-2046)
+fix(sync): migrate issue search to enhanced search endpoint (api/2/search/jql, CHANGE-2046)
 docs(readme): add fork maintainer, scope and AI-assisted method notes
 ```
 

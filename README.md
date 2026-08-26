@@ -2,10 +2,17 @@
 
 **Maintainer:** Luca Bonazzi <luca.bonazzi@gmail.com>
 
-**Purpose.** Bring the client up to date with the current Jira Cloud REST API (v3),
-including the migration from the deprecated `/rest/api/*/search` endpoint to
-`/rest/api/3/search/jql` (Atlassian CHANGE-2046, which replaces `startAt`/`total`
-offset paging with `nextPageToken` cursor paging and drops the total result count).
+**Purpose.** Bring the client up to date with the current Jira Cloud REST API,
+starting with the migration from the removed `/rest/api/*/search` endpoint to the
+enhanced search endpoint `/rest/api/2/search/jql` (Atlassian CHANGE-2046, which
+replaces `startAt`/`total` offset paging with `nextPageToken` cursor paging and
+drops the total result count).
+
+The `api/2` flavour is deliberate and tactical: v3 is the ADF-aware counterpart of
+v2, not its successor, and this client parses plain text throughout. Moving the
+whole client to v3 means adding Atlassian Document Format support first, and that
+is on the roadmap rather than done — see
+[docs/CHANGES-FORK.md](docs/CHANGES-FORK.md) for the reasoning and the risks.
 
 **Method.** Conversion and code changes are carried out with
 [Claude Code](https://claude.com/claude-code) (Anthropic) under human supervision:
