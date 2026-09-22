@@ -99,7 +99,7 @@ class DownloadIssuesByKey extends BaseOperation implements DBConnectorOperation 
       ProgressInfo[] progressInfos = wholeProgress.spawn(0.9).split(keys.size());
       for (int i = 0, keysSize = keys.size(); i < keysSize; i++) {
         ProgressInfo progress = progressInfos[i];
-        progress.startActivity(RestIssueProcessor.PROGRESS_LOAD_NEXT.formatMessage(String.valueOf(i), String.valueOf(keysSize)));
+        progress.startActivity(RestIssueProcessor.PROGRESS_LOAD_NEXT.formatMessage(String.valueOf(i + 1)));
         String key = keys.get(i);
         String path = "api/2/issue/" + key;
         RestResponse response = session.restGet(path, RequestPolicy.SAFE_TO_RETRY);
