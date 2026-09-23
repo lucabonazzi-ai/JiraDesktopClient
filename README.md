@@ -18,8 +18,14 @@ is on the roadmap rather than done — see
 [Claude Code](https://claude.com/claude-code) (Anthropic) under human supervision:
 every change is reviewed, built and tested before being committed.
 
-**Status.** Work in progress. The baseline is Client for Jira 3.9.0, released as
-open source by ALM Works; see the original README below for the upstream project.
+**Status.** The baseline is Client for Jira 3.9.0, the state of the `cloud`
+branch when ALM Works open sourced the code. Upstream development stopped in
+May 2020, and 3.9.0 was never released as a product: the last ALM Works release
+was 3.8.4. Numbering therefore resumes at **3.10.0** with the first release of
+this fork, rather than claiming a version number belonging to another project.
+Releases are published on the
+[Releases page](https://github.com/lucabonazzi-ai/JiraDesktopClient/releases);
+see [CHANGELOG.md](CHANGELOG.md) for what changed.
 
 **Build note.** `ant/build.sh` is no longer tracked, because it holds machine-local
 paths. Copy [ant/build.sh.example](ant/build.sh.example) to `ant/build.sh` and fill in

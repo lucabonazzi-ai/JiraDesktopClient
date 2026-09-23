@@ -39,12 +39,19 @@ the first commit of this fork.
 
 ## Building
 
-You need **Oracle JDK 8, update 112 to 202**, and Apache Ant.
+You need **a Java 8 JDK that ships JavaFX**, and Apache Ant.
 
-The upper bound is not cosmetic. 8u202 is the last update that ships JavaFX
-(`jre/lib/ext/jfxrt.jar`), and the application launcher requires
-`javafx.application.Platform` on its first line. It is also the last Oracle
-build before the licence change. OpenJDK and Java 9+ do not work.
+What actually matters is `jre/lib/ext/jfxrt.jar`: the application launcher
+requires `javafx.application.Platform` on its first line. Java 9+ does not work.
+
+Two runtimes are known to build the project:
+
+* **Oracle JDK 8, update 112 to 202.** 8u202 is the last update that ships
+  JavaFX, and the last Oracle build before the licence change.
+* **An OpenJDK 8 build with the JavaFX bundle**, such as Zulu 8 `jdk+fx`. This
+  contradicts the older note that OpenJDK does not work; that note held for
+  OpenJDK builds *without* JavaFX. The CI builds on Zulu 8 `jdk+fx`, because
+  the Oracle JDK cannot be downloaded unattended.
 
 ```sh
 cp ant/build.sh.example ant/build.sh   # fill in ANT_HOME and JDK8_HOME
@@ -81,6 +88,37 @@ only. Override the path with the `JIRACLIENT_JAVA_HOME` environment variable.
   [docs/CHANGES-FORK.md](docs/CHANGES-FORK.md).
 * Record anything a future reader would need in
   [docs/CHANGES-FORK.md](docs/CHANGES-FORK.md).
+* Add an entry under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md) for
+  anything a user would notice. The two files have different jobs:
+  `CHANGES-FORK.md` is the engineering record, `CHANGELOG.md` is what ships.
+
+## Releasing
+
+Versions follow [Semantic Versioning](https://semver.org/). The product version
+lives in `ant/jiraclient.properties`; the build number is separate and is set by
+CI from the run number.
+
+1. Set `product.version` and `product.fileVersion` in
+   `ant/jiraclient.properties` (`3.10.0` and `3_10_0` respectively).
+2. Move the `## [Unreleased]` entries in `CHANGELOG.md` under the new version,
+   dated, and add the comparison links at the bottom.
+3. Update `Version:` and the change history in
+   `env/distimage.jiraclient/RELEASE.txt`, and the top block of
+   `env/distimage.jiraclient/etc/welcome.html`, which is what a user sees first.
+4. Commit, then tag and push:
+
+   ```sh
+   git tag -a v3.10.0 -m "Client for Jira 3.10.0"
+   git push origin cloud --follow-tags
+   ```
+
+The tag triggers `.github/workflows/release.yml`, which builds the distribution
+and attaches the ZIP to a **draft** release. Review it, then publish. The
+workflow refuses to run if the tag and `product.version` disagree.
+
+Built ZIPs are never committed. Git does not deduplicate binaries, so each one
+would remain in history permanently; the tag is what ties a release to its
+source.
 
 ## Licence
 

@@ -11,6 +11,9 @@ for scope and method.
 
 | Area | Change | Status |
 |---|---|---|
+| Release | Version renumbered 3.9.0 to 3.10.0, `CHANGELOG.md` added | done |
+| Build | CI on GitHub Actions: build on push, release on tag | done |
+| Build | Broken trunk: `PROGRESS_LOAD_NEXT` call site left at two arguments | fixed |
 | Build | UTF-8 source encoding fix | done |
 | Build | Line endings renormalised to LF | done (working copy) |
 | Build | `build.sh` untracked, `build.sh.example` added | done |
@@ -30,13 +33,26 @@ for scope and method.
 
 | Requirement | Constraint |
 |---|---|
-| Oracle JDK 8 | 8u112 to 8u202. Must be a JDK (`javac`), not a JRE. Not OpenJDK, not 9+. |
+| A Java 8 JDK **with JavaFX** | Must be a JDK (`javac`), not a JRE. Not 9+. |
 | Apache Ant | Any 1.9/1.10. The binary distribution is enough. |
 | Git Bash or WSL | `ant/build.sh` is a POSIX script; there is no `.bat` equivalent. |
 
-The 8u202 upper bound matters twice over: it is the last Oracle build before the
-licence change, **and** the last one that still ships JavaFX. See
-[Runtime notes](#runtime-notes).
+The real constraint is `jre/lib/ext/jfxrt.jar`, not the vendor. Two runtimes are
+verified to build the project:
+
+* **Oracle JDK 8u112 to 8u202.** The upper bound matters twice over: 8u202 is
+  the last Oracle build before the licence change, **and** the last one that
+  still ships JavaFX.
+* **Zulu OpenJDK 8 with the JavaFX bundle** (`jdk+fx`). Verified by building
+  all 32 modules from clean: 0 errors, and the resulting distribution runs.
+
+> An earlier revision of this document stated that OpenJDK does not work. That
+> was an over-generalisation from the JavaFX requirement: it holds for OpenJDK
+> builds *without* JavaFX, which is most of them, but not for OpenJDK as such.
+> The distinction matters, because no Oracle JDK 8 can be downloaded unattended,
+> so CI would be impossible if the vendor really were the constraint.
+
+See [Runtime notes](#runtime-notes).
 
 ### UTF-8 source encoding
 

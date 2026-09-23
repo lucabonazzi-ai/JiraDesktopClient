@@ -1,7 +1,6 @@
 Client for Jira Readme
-Document version: 3.9.0 (26 April 2020)
-http://almworks.com/jiraclient
-https://bitbucket.org/almworks/jiraclient/src/cloud/
+Document version: 3.10.0 (23 September 2026)
+https://github.com/lucabonazzi-ai/JiraDesktopClient
 
 
 Contents
@@ -47,8 +46,12 @@ System Requirements
    setting in Jira configuration to reduce traffic.)
 
 9. Java: In case you downloaded a distribution without Java bundled in, you
-   will need Java SE 8 or later. We support only Java from Oracle; other
-   Java implementations, including OpenJDK, are not supported.
+   will need a Java 8 runtime that includes JavaFX: the application will not
+   start without it. Either Oracle Java 8, update 112 to 202, or an OpenJDK 8
+   build carrying JavaFX, such as Zulu 8 "jdk+fx" or Liberica 8 "full".
+   Java 9 and later are not supported.
+
+   To check a runtime, look for jre/lib/ext/jfxrt.jar inside it.
 
 
 Installation - Windows
