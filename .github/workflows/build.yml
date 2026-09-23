@@ -33,6 +33,16 @@ jobs:
       - name: Set up Ant
         run: sudo apt-get update && sudo apt-get install -y ant
 
+      # ant/generated.xml is produced from meta.xml by an XSL transform and is
+      # not tracked, so a clean checkout has to generate it before any target
+      # defined there can be called.
+      - name: Generate the build script
+        run: |
+          cd ant
+          ant -f build.xml generateBuildXml \
+            -Djdk="$JAVA_HOME" \
+            -Dbuild.number="${GITHUB_RUN_NUMBER}"
+
       # Compilation is the gate: it must never fail.
       - name: Compile
         run: |
