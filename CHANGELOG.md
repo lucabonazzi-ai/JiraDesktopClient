@@ -41,6 +41,13 @@ no version of the client could still perform.
 
 ### Changed
 
+- **Corrected the licence text shipped for iText.** `license/iText-license.txt`
+  carried the Mozilla Public License 1.1, which describes iText 2.x. The
+  version actually redistributed is 5.4.4, licensed under the **GNU Affero
+  General Public License v3** — iText moved to the AGPL with 5.0.0 in 2009, and
+  the jar's manifest says so. The AGPL and the GPL v3 explicitly permit
+  combination with one another, so nothing about the product's licensing
+  changes; the file simply named the wrong licence for a component that ships.
 - The progress readout during a query load shows the number of issues loaded
   instead of a percentage. The enhanced search endpoint no longer returns a
   total result count, so no percentage can be computed.

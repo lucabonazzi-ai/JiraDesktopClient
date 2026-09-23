@@ -12,6 +12,7 @@ for scope and method.
 | Area | Change | Status |
 |---|---|---|
 | Release | Version renumbered 3.9.0 to 3.10.0, `CHANGELOG.md` added | done |
+| Legal | iText licence text corrected from MPL 1.1 to AGPL v3 | done |
 | Build | CI on GitHub Actions: build on push, release on tag | done |
 | Build | Broken trunk: `PROGRESS_LOAD_NEXT` call site left at two arguments | fixed |
 | Build | UTF-8 source encoding fix | done |
@@ -364,6 +365,77 @@ conflict machinery was needed.
 
 `fields: ["*all"]` is **not** a problem on `api/2/search/jql`: the live instance
 returns the full field set.
+
+---
+
+## Licensing
+
+Checked before publishing the first release of the fork, because distributing
+binaries puts the licence terms in front of users rather than just contributors.
+
+### The fork may keep the name and the version line
+
+GPL v3 **section 7(c)** allows a copyright holder to require that modified
+versions be marked as different, which would have forced a rename. It does not
+apply here:
+
+* `env/distimage/license.html` is the **unmodified FSF text** of GPL v3. The
+  only mentions of trademarks and of section 7 are the licence's own wording,
+  not terms added by ALM Works.
+* The upstream README states only: *"This work is licensed under the terms of
+  GPL v3 license. If you require a different license, please contact
+  info@almworks.com."* No naming, branding or attribution condition beyond the
+  GPL.
+
+Attribution to ALM Works, Inc. is kept regardless, as GPL v3 sections 4 and 5
+require, and the fork states that it is unaffiliated so that nobody mistakes it
+for a supported product.
+
+### iText is AGPL v3, not MPL 1.1
+
+`env/distimage/license/iText-license.txt` shipped the Mozilla Public License
+1.1. The jar actually redistributed says otherwise:
+
+```
+Implementation-Version: 5.4.4
+Bundle-License: http://www.fsf.org/licensing/licenses/agpl-3.0.html
+```
+
+iText relicensed to the AGPL with 5.0.0 in 2009; the MPL text describes iText
+2.x and was never updated when the dependency moved to 5.4.4. The jar is
+genuinely redistributed (`<distlib lib="itext"/>` in `ant/meta.xml`).
+
+This was never a compatibility problem: AGPL v3 section 13 and GPL v3 section
+13 explicitly permit combining works under the two licences, and the AGPL's
+network clause is inert for a desktop application that is not run on a server.
+It was an **accuracy** problem, and GPL v3 sections 4 and 5 require the
+applicable terms to be conveyed correctly. Fixed by replacing the file with the
+FSF text of the AGPL v3, preceded by a note naming the component it covers.
+
+### The other redistributed libraries
+
+All compatible with GPL v3, all carrying their own licence file:
+
+| Licence | Components |
+|---|---|
+| BSD | ControlsFX, Javolution, PicoContainer, JGoodies, JDOM |
+| LGPL | Trove, Jazzy |
+| Apache 2.0 | Xerces, CyberNeko, FontAwesomeFX |
+| CC-BY | Silk icon set |
+| AGPL v3 | iText |
+
+> `license/NOTICE.txt` mentions only the Apache Software Foundation. That is
+> the Apache 2.0 attribution notice, not a summary of the whole distribution;
+> the other components are covered by their own files.
+
+### The commercial licensing code is inert
+
+`CoreComponents/.../license/LicenseType.java` and
+`JiraProvider3/rc/.../license.properties` are what remains of the paid product's
+site-licence scheme. Nothing enforces it: the only reference in
+`WelcomeScreen.java` is commented out, and the message strings have no callers.
+The client runs without a licence, which is consistent with the code having
+been open sourced. Left in place, as dead code that predates the fork.
 
 ---
 
