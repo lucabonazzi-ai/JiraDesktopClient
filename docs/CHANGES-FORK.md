@@ -24,6 +24,7 @@ for scope and method.
 | Sync | "Upload conflict" when setting a field a previous upload had already changed | fixed, as a consequence of the migration landing on v2 |
 | API | Unbounded JQL in `LoadCommentVisibility` rejected by the enhanced endpoint | open, not fixed |
 | Tests | `ReferredByQueryTests` fails in the full run, passes in isolation | open, not fixed |
+| Tests | `DateUtilTests` fails on a JVM with post-2019 timezone data | open, not fixed |
 
 ---
 
@@ -244,6 +245,31 @@ To run it in isolation, reusing the already compiled classes:
 
 > Possible fixes: `forkmode="perTest"` for the ItemStorage module, which is
 > slower, or fixing the teardown of the database fixtures.
+
+### DateUtilTests
+
+Fails on CI, passes locally on Oracle 8u202:
+
+```
+junit.framework.AssertionFailedError: Pacific/Kanton [2] expected:<10451> but was:<10450>
+```
+
+Not environmental in the usual sense: reproduced locally under Zulu 8, so it
+follows the JVM rather than the machine or its timezone.
+
+`testInstantToDayNumber` iterates over `TimeZone.getAvailableIDs()`, so the set
+of zones under test is whatever the JVM ships. `Pacific/Kanton` was added to
+tzdata in 2021: absent from Oracle 8u202 (2019 data), present in Zulu 8u504.
+The expected day numbers were computed against the zone set of the day.
+
+The test already carries a hand-written exclusion for `Pacific/Fakaofo`, with a
+comment about a JVM on the build server having older timezone data, so this is
+the same failure mode recurring rather than something new.
+
+> Possible fixes: pin the test to a fixed set of zones instead of enumerating
+> the JVM's, or derive the expectations rather than hard-coding them. Left
+> alone here: it is pre-existing, and the CI workflow does not fail the build
+> on test results.
 
 ---
 

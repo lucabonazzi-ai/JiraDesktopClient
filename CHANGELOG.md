@@ -54,6 +54,11 @@ no version of the client could still perform.
 - **`ReferredByQueryTests` fails in the full test run** and passes in isolation.
   The module shares one JVM across its test classes, and SQLite runs out of
   temporary storage by the time this class runs. Pre-existing, not a regression.
+- **`DateUtilTests` fails on a JVM with recent timezone data.** The test walks
+  every zone the JVM knows, so zones added after the test was written break it:
+  `Pacific/Kanton`, introduced in 2021, is off by one day number. It passes on
+  Oracle 8u202 (2019 tzdata) and fails on Zulu 8u504, which is what CI runs.
+  The test already excludes one other zone by hand for the same reason.
 
 ### Compatibility
 
