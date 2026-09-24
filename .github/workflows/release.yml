@@ -110,7 +110,8 @@ jobs:
           body: |
             Client for Jira ${{ steps.version.outputs.version }}, build ${{ steps.version.outputs.build }}.
 
-            See [CHANGELOG.md](CHANGELOG.md) for what changed.
+            See [CHANGELOG.md](${{ github.server_url }}/${{ github.repository }}/blob/${{ steps.version.outputs.tag }}/CHANGELOG.md)
+            for what changed.
 
             **Requires a Java 8 runtime with JavaFX** (Oracle JDK 8u112–8u202,
             or an OpenJDK 8 build carrying `jfxrt.jar`). Unpack the ZIP and run
